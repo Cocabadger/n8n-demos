@@ -146,3 +146,8 @@ footer { margin-top: 40px; color: var(--muted); font-size: 12px; }
 .mini { margin: 0; font-size: 11px; color: var(--muted); white-space: pre-wrap; }
 
 .errbox { border: 1px solid rgba(251,113,133,0.4); color: var(--err); border-radius: 8px; padding: 8px 10px; font-size: 12px; }
+
+.proof { margin-top: 8px; }
+.tgfeed h2 { display: flex; align-items: center; gap: 8px; font-size: 18px; }
+.tgfeed-list { display: flex; flex-direction: column; gap: 8px; max-width: 640px; }
+.tg-time { font-size: 10px; color: var(--muted); text-align: right; margin-top: 4px; }

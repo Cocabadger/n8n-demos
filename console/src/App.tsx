@@ -42,6 +42,7 @@ export default function App() {
   const [lead, setLead] = useState({ name: '', email: '', company: '' })
   const [text, setText] = useState('')
   const [feed, setFeed] = useState<Execution[]>([])
+  const [tgFeed, setTgFeed] = useState<{ text: string; at: string | null }[]>([])
 
   const call = async (id: string, setter: (r: Res) => void, fn: () => Promise<Response>) => {
     setBusy((b) => ({ ...b, [id]: true }))
@@ -62,6 +63,10 @@ export default function App() {
       try {
         const r = await fetch('/api/executions')
         if (r.ok && !stop) setFeed(await r.json())
+      } catch { /* best-effort */ }
+      try {
+        const r2 = await fetch('/api/telegram')
+        if (r2.ok && !stop) setTgFeed(await r2.json())
       } catch { /* best-effort */ }
     }
     tick()
@@ -212,6 +217,26 @@ export default function App() {
             </div>
           )}
         </article>
+      </section>
+
+      <section className="proof">
+        {tgFeed.length > 0 && (
+          <div className="tgfeed">
+            <h2>Telegram — the real channel <span className="dot" /></h2>
+            <p className="hint">
+              Actual messages the workflows delivered, read from the public channel —{' '}
+              <a href={`https://t.me/s/${'svor_ops_feed'}`} target="_blank" rel="noreferrer">open it in Telegram</a> to verify.
+            </p>
+            <div className="tgfeed-list">
+              {tgFeed.map((m, i) => (
+                <div key={i} className="tg-bubble">
+                  {m.text}
+                  {m.at && <div className="tg-time">{new Date(m.at).toLocaleTimeString()}</div>}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
       </section>
 
       <section className="feed">
