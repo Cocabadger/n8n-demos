@@ -8,7 +8,7 @@ import './App.css'
 const N8N = 'https://n8n-production-2e93.up.railway.app'
 // Public Telegram channel (readable in a browser without an account).
 // Set to '' to hide the links until the channel exists.
-const TG_CHANNEL = ''
+const TG_CHANNEL = 'public_test_cocabadger'
 
 interface Execution {
   id: string
@@ -225,7 +225,7 @@ export default function App() {
             <h2>Telegram — the real channel <span className="dot" /></h2>
             <p className="hint">
               Actual messages the workflows delivered, read from the public channel —{' '}
-              <a href={`https://t.me/s/${'svor_ops_feed'}`} target="_blank" rel="noreferrer">open it in Telegram</a> to verify.
+              <a href={`https://t.me/s/${TG_CHANNEL}`} target="_blank" rel="noreferrer">open it in Telegram</a> to verify.
             </p>
             <div className="tgfeed-list">
               {tgFeed.map((m, i) => (

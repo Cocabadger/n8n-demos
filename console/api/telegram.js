@@ -3,7 +3,7 @@
 // page a clean feed. This is how the console proves alerts really land in
 // Telegram without giving anyone access to a private chat.
 export default async function handler(req, res) {
-  const channel = process.env.TG_CHANNEL;
+  const channel = process.env.TG_CHANNEL || 'public_test_cocabadger'; // public name, not a secret
   if (!channel) return res.status(200).json([]);
   try {
     const html = await (await fetch(`https://t.me/s/${channel}`)).text();
