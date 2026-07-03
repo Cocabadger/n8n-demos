@@ -6,3 +6,10 @@ dist/
 API_keys.rtf
 .hubspot-token
 .anthropic-api-key
+*.rtfd/
+*.rtf
+*.png
+PRACTICUM_EXPLAINED.md
+.telegram-chat-id
+.hubspot-object-type-id
+.hubspot-portal-id
