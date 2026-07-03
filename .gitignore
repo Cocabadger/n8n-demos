@@ -1,0 +1,5 @@
+.n8n-api-key
+.telegram-bot-token
+node_modules/
+dist/
+.env
