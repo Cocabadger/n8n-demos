@@ -7,6 +7,7 @@ export default async function handler(req, res) {
   if (!channel) return res.status(200).json([]);
   try {
     const html = await (await fetch(`https://t.me/s/${channel}`)).text();
+    const photoM = html.match(/og:image" content="([^"]+)"/);
     const out = [];
     const blocks = html.split('tgme_widget_message_wrap').slice(1);
     for (const b of blocks) {
@@ -22,8 +23,8 @@ export default async function handler(req, res) {
       out.push({ text, at: timeM ? timeM[1] : null });
     }
     res.setHeader('Cache-Control', 's-maxage=10');
-    res.status(200).json(out.slice(-8).reverse());
+    res.status(200).json({ photo: photoM ? photoM[1] : null, items: out.slice(-8).reverse() });
   } catch {
-    res.status(200).json([]);
+    res.status(200).json({ photo: null, items: [] });
   }
 }

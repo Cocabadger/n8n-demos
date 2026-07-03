@@ -43,6 +43,7 @@ export default function App() {
   const [text, setText] = useState('')
   const [feed, setFeed] = useState<Execution[]>([])
   const [tgFeed, setTgFeed] = useState<{ text: string; at: string | null }[]>([])
+  const [tgPhoto, setTgPhoto] = useState<string | null>(null)
 
   const call = async (id: string, setter: (r: Res) => void, fn: () => Promise<Response>) => {
     setBusy((b) => ({ ...b, [id]: true }))
@@ -66,7 +67,11 @@ export default function App() {
       } catch { /* best-effort */ }
       try {
         const r2 = await fetch('/api/telegram')
-        if (r2.ok && !stop) setTgFeed(await r2.json())
+        if (r2.ok && !stop) {
+          const d = await r2.json()
+          setTgFeed(Array.isArray(d) ? d : d.items || [])
+          if (!Array.isArray(d) && d.photo) setTgPhoto(d.photo)
+        }
       } catch { /* best-effort */ }
     }
     tick()
@@ -246,7 +251,7 @@ export default function App() {
       <aside className="chatpane">
         <div className="chat">
           <div className="chat-head">
-            <div className="chat-avatar">S</div>
+            <div className="chat-avatar">{tgPhoto ? <img src={tgPhoto} alt="" /> : 'S'}</div>
             <div className="chat-title">
               <b>svor ops feed</b>
               <div className="chat-sub">public channel · written by the workflows</div>
