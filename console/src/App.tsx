@@ -204,7 +204,7 @@ export default function App() {
             setSvorRes({ _sample: sample })
             call('v', (r) => setSvorRes({ ...(r || {}), _sample: sample }), () =>
               fetch(`${N8N}/webhook/svor-import`, {
-                method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(sample),
+                method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ...sample, demo: true }),
               }))
           }}>
             {busy.v ? 'Running…' : 'Simulate an import event'}
