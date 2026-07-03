@@ -1,7 +1,7 @@
 # n8n demos — live automation portfolio
 
 Interactive showcase of production-grade n8n workflows by **Artem Taranenko**.
-Every card on the [live console](https://TODO.vercel.app) runs a real workflow
+Every card on the [live console](https://n8n-demos.vercel.app) runs a real workflow
 on a self-hosted n8n instance (Railway, Docker) — press **Run** and watch the
 execution appear in the live feed.
 
