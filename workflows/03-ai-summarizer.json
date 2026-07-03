@@ -1,0 +1,123 @@
+{
+  "name": "3 · AI Summarizer",
+  "nodes": [
+    {
+      "name": "Run (webhook)",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        0,
+        0
+      ],
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "summarize",
+        "responseMode": "responseNode"
+      },
+      "id": "ad077dc7-7c06-42a9-b7a7-88769179080c",
+      "webhookId": "19bc9092-222b-4508-80c3-6099f6e979df"
+    },
+    {
+      "name": "Claude",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        240,
+        0
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "REPLACE_ME",
+          "name": "anthropic (svor key)"
+        }
+      },
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.anthropic.com/v1/messages",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({model:'claude-haiku-4-5-20251001',max_tokens:500,system:'You are a summarizer inside an n8n workflow. Reply ONLY with JSON: {\\\"tldr\\\": string, \\\"key_points\\\": string[], \\\"action_items\\\": string[]}. No prose outside JSON.',messages:[{role:'user',content:($json.body?.text || 'empty').slice(0,8000)}]}) }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "anthropic-version",
+              "value": "2023-06-01"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        }
+      },
+      "id": "92513838-011a-473c-8ccf-e5223c5228d0"
+    },
+    {
+      "name": "Shape contract (JS)",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        480,
+        0
+      ],
+      "parameters": {
+        "jsCode": "\n// Shape Claude's reply into a strict contract for the page.\nconst raw = $('Claude').first().json;\nlet parsed = {};\ntry {\n  const textBlock = (raw.content || []).map(c => c.text || '').join('');\n  parsed = JSON.parse(textBlock.replace(/^```json?\\s*|\\s*```$/g, ''));\n} catch (e) {\n  parsed = { tldr: 'Could not parse model output', key_points: [], action_items: [] };\n}\nreturn [{ json: {\n  summarized_at: new Date().toISOString(),\n  model: raw.model || 'claude',\n  input_chars: ($('Run (webhook)').first().json.body?.text || '').length,\n  ...parsed,\n}}];\n"
+      },
+      "id": "1909b914-bc41-4c5b-a4df-b1c0f13e929d"
+    },
+    {
+      "name": "Respond",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        720,
+        0
+      ],
+      "parameters": {
+        "respondWith": "firstIncomingItem"
+      },
+      "id": "0e8dd7e8-8b00-4fbe-8432-b2b9d12eab12"
+    }
+  ],
+  "connections": {
+    "Run (webhook)": {
+      "main": [
+        [
+          {
+            "node": "Claude",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Claude": {
+      "main": [
+        [
+          {
+            "node": "Shape contract (JS)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Shape contract (JS)": {
+      "main": [
+        [
+          {
+            "node": "Respond",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  }
+}

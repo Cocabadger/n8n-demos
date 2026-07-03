@@ -1,0 +1,83 @@
+{
+  "name": "4 · svor → notify (production)",
+  "nodes": [
+    {
+      "name": "svor event (webhook)",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        0,
+        0
+      ],
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "svor-import",
+        "responseMode": "onReceived"
+      },
+      "id": "f7f5d44c-1f06-4e36-971f-0bf431bc68e6",
+      "webhookId": "50a3490b-cac1-493f-8d2b-2e55c7f7f1ef"
+    },
+    {
+      "name": "Format (JS)",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        220,
+        0
+      ],
+      "parameters": {
+        "jsCode": "\nconst e = $json.body || {};\nconst cs = e.checksum === true ? 'checksum OK' : e.checksum === false ? 'CHECKSUM MISMATCH' : 'no checksum';\nreturn [{ json: { message:\n  `svor import: ${e.bank || 'unknown'} — ${e.inserted ?? '?'} rows in, ${e.duplicates ?? 0} duplicates, ${cs} (${e.filename || ''})`,\n}}];\n"
+      },
+      "id": "4c18bb90-ccf1-45fe-9740-629f268d7889"
+    },
+    {
+      "name": "Telegram",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        440,
+        0
+      ],
+      "credentials": {
+        "telegramApi": {
+          "id": "REPLACE_ME",
+          "name": "svor ops bot 2"
+        }
+      },
+      "parameters": {
+        "chatId": "YOUR_CHAT_ID",
+        "text": "={{ $json.message }}",
+        "additionalFields": {}
+      },
+      "id": "5f2b93ed-05c1-4f76-844d-2183d1df19f5",
+      "webhookId": "508869f5-4d0e-4c00-9aa7-20abd288adb5"
+    }
+  ],
+  "connections": {
+    "svor event (webhook)": {
+      "main": [
+        [
+          {
+            "node": "Format (JS)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format (JS)": {
+      "main": [
+        [
+          {
+            "node": "Telegram",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  }
+}

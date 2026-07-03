@@ -1,0 +1,197 @@
+{
+  "name": "2 · Lead → HubSpot",
+  "nodes": [
+    {
+      "name": "Lead form (webhook)",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        0,
+        0
+      ],
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "lead",
+        "responseMode": "responseNode"
+      },
+      "id": "7b7464dc-25c9-4d86-bde4-40ac0327dde4",
+      "webhookId": "36cb2c58-fadb-4a49-a133-da18b2bd3ea7"
+    },
+    {
+      "name": "HubSpot: create contact",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        220,
+        0
+      ],
+      "onError": "continueRegularOutput",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "REPLACE_ME",
+          "name": "hubspot practicum portal"
+        }
+      },
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.hubapi.com/crm/v3/objects/contacts",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({properties: {email: ($json.body?.email || 'demo@example.com'), firstname: ($json.body?.name || 'Demo'), company: ($json.body?.company || '') } }) }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        }
+      },
+      "id": "5e4b8104-b996-4d06-998c-2c517ddbaf98"
+    },
+    {
+      "name": "Claude: greeting",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        440,
+        0
+      ],
+      "onError": "continueRegularOutput",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "REPLACE_ME",
+          "name": "anthropic (svor key) 2"
+        }
+      },
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.anthropic.com/v1/messages",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({model:'claude-haiku-4-5-20251001',max_tokens:60,messages:[{role:'user',content:'Write ONE short friendly welcome line (max 15 words) for a new lead named ' + ($('Lead form (webhook)').first().json.body?.name || 'there') + ' from company ' + ($('Lead form (webhook)').first().json.body?.company || 'unknown') + '. Reply with the line only.'}]}) }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "anthropic-version",
+              "value": "2023-06-01"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        }
+      },
+      "id": "c943c75f-ce5d-492a-a9e7-46af0db762e5"
+    },
+    {
+      "name": "Shape (JS)",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        660,
+        0
+      ],
+      "parameters": {
+        "jsCode": "\nconst hs = $('HubSpot: create contact').first().json;\nconst claude = $('Claude: greeting').first().json;\nconst greeting = (claude.content || []).map(c => c.text || '').join('').trim();\nconst lead = $('Lead form (webhook)').first().json.body || {};\nreturn [{ json: {\n  status: hs.id ? 'created' : 'exists_or_error',\n  hubspot_contact_id: hs.id || null,\n  name: lead.name || '', company: lead.company || '',\n  greeting,\n  message: `New lead via demo console: ${lead.name || '?'} (${lead.company || '?'}) -> HubSpot ${hs.id ? '#' + hs.id : 'duplicate'}`,\n}}];\n"
+      },
+      "id": "afed4d6d-b35d-435c-a57f-94b6a4022a3a"
+    },
+    {
+      "name": "Respond",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        880,
+        -80
+      ],
+      "parameters": {
+        "respondWith": "firstIncomingItem"
+      },
+      "id": "8f299b9d-b5c6-4924-a13a-62e88d1e2e10"
+    },
+    {
+      "name": "Notify Telegram",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        880,
+        120
+      ],
+      "credentials": {
+        "telegramApi": {
+          "id": "REPLACE_ME",
+          "name": "svor ops bot 2"
+        }
+      },
+      "parameters": {
+        "chatId": "YOUR_CHAT_ID",
+        "text": "={{ $json.message }}",
+        "additionalFields": {}
+      },
+      "id": "acc4df1a-9a00-4c18-a2a8-85ae80e8235b",
+      "webhookId": "a26764a2-a08e-4192-a858-6853e832fd2d"
+    }
+  ],
+  "connections": {
+    "Lead form (webhook)": {
+      "main": [
+        [
+          {
+            "node": "HubSpot: create contact",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HubSpot: create contact": {
+      "main": [
+        [
+          {
+            "node": "Claude: greeting",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Claude: greeting": {
+      "main": [
+        [
+          {
+            "node": "Shape (JS)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Shape (JS)": {
+      "main": [
+        [
+          {
+            "node": "Respond",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Notify Telegram",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  }
+}

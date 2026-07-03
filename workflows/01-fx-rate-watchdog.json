@@ -1,0 +1,237 @@
+{
+  "name": "1 · FX Rate Watchdog",
+  "nodes": [
+    {
+      "name": "Run (webhook)",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        0,
+        0
+      ],
+      "parameters": {
+        "httpMethod": "GET",
+        "path": "rate-watchdog",
+        "responseMode": "responseNode"
+      },
+      "id": "6125d326-fd06-40f4-86f0-e21e98f3f22e",
+      "webhookId": "b3de3395-2dbd-4b24-a5ca-d9b71d1b6d61"
+    },
+    {
+      "name": "Daily 09:00",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        0,
+        220
+      ],
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "days",
+              "triggerAtHour": 9
+            }
+          ]
+        }
+      },
+      "id": "15ac63b8-290a-4392-94cf-e7249c113366"
+    },
+    {
+      "name": "NBU official USD",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        220,
+        100
+      ],
+      "parameters": {
+        "url": "https://bank.gov.ua/NBUStatService/v1/statdirectory/exchange?valcode=USD&json"
+      },
+      "id": "cdc85b27-9f56-41ff-995f-441fe38a66b4"
+    },
+    {
+      "name": "Binance P2P USDT",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        440,
+        100
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "https://p2p.binance.com/bapi/c2c/v2/friendly/c2c/adv/search",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "{\"asset\": \"USDT\", \"fiat\": \"UAH\", \"tradeType\": \"SELL\", \"page\": 1, \"rows\": 10, \"payTypes\": [], \"publisherType\": null}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        }
+      },
+      "id": "ee3f138e-ef95-43c8-85a4-b8c132addb5a"
+    },
+    {
+      "name": "Compute premium (JS)",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        660,
+        100
+      ],
+      "parameters": {
+        "jsCode": "\n// Compare the official NBU USD rate with the live Binance P2P USDT price.\n// The premium is what a real cash-out actually costs vs the official rate.\nconst nbu = $('NBU official USD').first().json;\nconst official = Array.isArray(nbu) ? nbu[0].rate : nbu.rate;\nconst advs = ($('Binance P2P USDT').first().json.data || [])\n  .map(a => parseFloat(a.adv.price)).filter(p => p > 0).sort((a, b) => a - b);\nconst p2p = advs.length ? advs[Math.floor(advs.length / 2)] : null;\nconst premiumPct = p2p ? +(((p2p - official) / official) * 100).toFixed(2) : null;\nreturn [{ json: {\n  checked_at: new Date().toISOString(),\n  official_usd_uah: official,\n  p2p_usdt_uah: p2p,\n  premium_pct: premiumPct,\n  alert: premiumPct !== null && Math.abs(premiumPct) > 3,\n  message: `FX watchdog | official USD/UAH ${official} | P2P USDT ${p2p} | premium ${premiumPct}%`,\n}}];\n"
+      },
+      "id": "aaa892ee-4dc8-4668-a767-85126a6785cb"
+    },
+    {
+      "name": "Respond",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        880,
+        0
+      ],
+      "parameters": {
+        "respondWith": "firstIncomingItem"
+      },
+      "id": "94a13a8c-aab5-4743-a8a3-68b031e28b81"
+    },
+    {
+      "name": "Alert to Telegram",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        880,
+        220
+      ],
+      "disabled": false,
+      "credentials": {
+        "telegramApi": {
+          "id": "REPLACE_ME",
+          "name": "svor ops bot"
+        }
+      },
+      "parameters": {
+        "chatId": "YOUR_CHAT_ID",
+        "text": "={{ '🚨 ' + $json.message }}",
+        "additionalFields": {}
+      },
+      "id": "4e56405a-b662-4076-9047-7c64fb155f90",
+      "webhookId": "8b1a0ce7-9a53-4cc6-b882-6e997877d10e"
+    },
+    {
+      "name": "Premium > 3%?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        880,
+        120
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ $json.alert }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        }
+      },
+      "id": "b658066a-2f6c-44d0-8eba-cbf9a6d32ccd"
+    }
+  ],
+  "connections": {
+    "Run (webhook)": {
+      "main": [
+        [
+          {
+            "node": "NBU official USD",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Daily 09:00": {
+      "main": [
+        [
+          {
+            "node": "NBU official USD",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "NBU official USD": {
+      "main": [
+        [
+          {
+            "node": "Binance P2P USDT",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Binance P2P USDT": {
+      "main": [
+        [
+          {
+            "node": "Compute premium (JS)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Compute premium (JS)": {
+      "main": [
+        [
+          {
+            "node": "Respond",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Premium > 3%?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Premium > 3%?": {
+      "main": [
+        [
+          {
+            "node": "Alert to Telegram",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  }
+}
