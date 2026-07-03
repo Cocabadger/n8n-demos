@@ -227,6 +227,64 @@ export default function App() {
         </article>
       </section>
 
+      <section className="arch">
+        <h2>Architecture — how each card works</h2>
+        <p className="hint">Node-by-node flow of every workflow above. JSON exports live in the{' '}
+          <a href="https://github.com/Cocabadger/n8n-demos/tree/main/workflows">repo</a>.</p>
+
+        <div className="arch-item">
+          <h3>1 · FX Rate Watchdog</h3>
+          <div className="flow">
+            {['Webhook / Cron 09:00', 'HTTP: NBU official rate', 'HTTP: Binance P2P order book (POST)', 'Code (JS): median price + premium %', 'IF premium > 3%', 'Telegram alert'].map((n, i) => (
+              <span key={i} className="flow-node">{n}</span>
+            ))}
+          </div>
+          <p className="arch-note">Two triggers share one chain; the webhook branch also returns the numbers to this page. The JS node is where low-code stops being no-code: real logic lives in a Code node.</p>
+        </div>
+
+        <div className="arch-item">
+          <h3>2 · Lead → HubSpot</h3>
+          <div className="flow">
+            {['Webhook (form POST)', 'HTTP: HubSpot create contact', 'HTTP: Claude — one-line welcome', 'Code (JS): shape the response', 'Respond to page + Telegram'].map((n, i) => (
+              <span key={i} className="flow-node">{n}</span>
+            ))}
+          </div>
+          <p className="arch-note">CRM as the single source of truth: the contact record is created first, enrichment (LLM greeting) and notifications follow. Errors continue the flow — a failed greeting never loses the lead.</p>
+        </div>
+
+        <div className="arch-item">
+          <h3>3 · AI Summarizer</h3>
+          <div className="flow">
+            {['Webhook (text POST)', 'HTTP: Claude Haiku 4.5 (JSON-contract prompt)', 'Code (JS): validate the contract', 'Respond to page'].map((n, i) => (
+              <span key={i} className="flow-node">{n}</span>
+            ))}
+          </div>
+          <p className="arch-note">The LLM is just another node: strict JSON contract in the prompt, validation in code, input capped at 8k chars, smallest adequate model (Haiku) — cost control by design.</p>
+        </div>
+
+        <div className="arch-item">
+          <h3>4 · svor → notify (production)</h3>
+          <div className="flow">
+            {['svor backend (FastAPI, fire-and-forget task after import)', 'Webhook', 'Code (JS): format the summary', 'Telegram'].map((n, i) => (
+              <span key={i} className="flow-node">{n}</span>
+            ))}
+          </div>
+          <p className="arch-note">The boundary done right: the product itself is code (FastAPI, 166 tests) — n8n handles the operational glue around it. The hook is optional, best-effort and never slows an import.</p>
+        </div>
+
+        <h2>Why n8n at all — couldn't this be plain code?</h2>
+        <p className="why">
+          It could — a webhook is just an HTTP POST, and half of this portfolio (<a href="https://svor.vercel.app">svor</a> itself)
+          <em> is</em> plain code. n8n earns its place for the layer around integrations:
+        </p>
+        <ul className="why-list">
+          <li><b>Maintainability by non-developers.</b> A script can only be changed by whoever wrote it; a visual workflow can be read, debugged and edited by an operator. Automations in companies outlive their authors — the canvas is the code <em>and</em> its documentation.</li>
+          <li><b>500+ prebuilt connectors.</b> "Create a HubSpot contact" in raw code means OAuth, retries, pagination, error handling. Here it is one node where all of that is already solved.</li>
+          <li><b>Operations for free.</b> Execution history (the live feed on this page is literally its API), retries, encrypted credential store, cron scheduling — none of it had to be written.</li>
+          <li><b>And an honest boundary.</b> Complex domain logic, performance-critical paths, versioned business rules — that's code territory. Demo #4 shows the split I'd defend in production: <b>product = code, operational glue = n8n</b>.</li>
+        </ul>
+      </section>
+
       <section className="feed">
         <h2>Live executions <span className="dot" /></h2>
         <p className="hint">Straight from the n8n API via a key-holding proxy — your Run appears here within ~5s.</p>
