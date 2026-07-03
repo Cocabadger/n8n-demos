@@ -121,7 +121,7 @@ export default function App() {
         {/* 2 — Lead → HubSpot */}
         <article className="card">
           <h2>2 · Lead → HubSpot</h2>
-          <div className="stack">{['Webhook', 'HubSpot CRM', 'Claude LLM', 'Telegram'].map((s) => <span key={s}>{s}</span>)}</div>
+          <div className="stack">{['Webhook', 'HubSpot CRM', 'Claude Haiku 4.5', 'Telegram'].map((s) => <span key={s}>{s}</span>)}</div>
           <p>Creates a contact in a HubSpot test portal (CRM as the single source of
              truth), asks Claude for a one-line personalized welcome, and notifies
              Telegram. Fill the form — the created contact is shown below.</p>
@@ -161,7 +161,7 @@ export default function App() {
         {/* 3 — AI Summarizer */}
         <article className="card">
           <h2>3 · AI Summarizer</h2>
-          <div className="stack">{['Webhook', 'Claude LLM', 'JSON contract'].map((s) => <span key={s}>{s}</span>)}</div>
+          <div className="stack">{['Webhook', 'Claude Haiku 4.5', 'JSON contract'].map((s) => <span key={s}>{s}</span>)}</div>
           <p>Paste any text — an LLM step inside the workflow returns a structured
              summary. The prompt enforces a strict JSON contract; input is capped for
              cost control.</p>
