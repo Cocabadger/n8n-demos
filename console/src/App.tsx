@@ -93,7 +93,7 @@ export default function App() {
           Every card runs a <strong>real workflow</strong> on a self-hosted n8n instance
           (Docker on Railway) — and everything each workflow does is shown right here on
           the page. By <a href="https://www.linkedin.com/in/artem-taranenko-13472351">Artem Taranenko</a> ·{' '}
-          <a href="https://github.com/Cocabadger/n8n-demos">source & workflow JSONs</a>
+          <a href="https://github.com/Cocabadger/n8n-demos">GitHub (source + workflow JSONs)</a>
         </p>
       </header>
 
