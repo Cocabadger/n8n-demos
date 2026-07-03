@@ -79,11 +79,25 @@ export default function App() {
     return () => { stop = true; clearInterval(t) }
   }, [])
 
-  const svorSamples = [
-    { bank: 'mbank', inserted: 14, duplicates: 1, checksum: true, filename: 'statement-june.csv' },
-    { bank: 'wise', inserted: 32, duplicates: 0, checksum: true, filename: 'wise-eur-export.csv' },
-    { bank: 'monobank', inserted: 8, duplicates: 3, checksum: false, filename: 'mono-black.csv' },
-  ]
+  // Randomized fake import event — a new bank/size/verdict on every click.
+  const makeSample = () => {
+    const banks = [
+      { bank: 'mbank', file: 'statement-06-2026.csv' },
+      { bank: 'wise', file: 'wise-eur-export.csv' },
+      { bank: 'monobank', file: 'mono-black-uah.csv' },
+      { bank: 'pekao', file: 'pekao-pln-czerwiec.csv' },
+      { bank: 'revolut', file: 'revolut-business.csv' },
+      { bank: 'binance', file: 'binance-usdt-trades.csv' },
+    ]
+    const b = banks[Math.floor(Math.random() * banks.length)]
+    return {
+      bank: b.bank,
+      inserted: 5 + Math.floor(Math.random() * 55),
+      duplicates: Math.floor(Math.random() * 5),
+      checksum: Math.random() > 0.2,
+      filename: b.file,
+    }
+  }
 
   return (
     <main>
@@ -205,7 +219,7 @@ export default function App() {
              run — calls this workflow automatically on every bank-statement import.
              Press the button to simulate exactly the event svor sends in production.</p>
           <button disabled={busy.v} onClick={() => {
-            const sample = svorSamples[Math.floor(Math.random() * svorSamples.length)]
+            const sample = makeSample()
             setSvorRes({ _sample: sample })
             call('v', (r) => setSvorRes({ ...(r || {}), _sample: sample }), () =>
               fetch(`${N8N}/webhook/svor-import`, {
